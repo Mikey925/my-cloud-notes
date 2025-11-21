@@ -3,106 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的雲端筆記 (MyNotes)</title>
+    <title>我的雲端筆記 (MyNotes Pro)</title>
+    <!-- 引入 Google Fonts 讓字體更漂亮 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        /* --- 暗夜模式樣式 (Dark Mode) --- */
+        /* --- 全局設定 --- */
+        * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            padding: 20px; 
-            max-width: 800px; 
-            margin: 0 auto; 
+            font-family: 'Noto Sans TC', sans-serif; 
+            margin: 0; 
+            padding: 0; 
             background-color: #121212; 
             color: #e0e0e0; 
-        }
-        
-        h1 {
-            color: #bb86fc; 
-            font-weight: normal;
-            font-size: 1.8rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* 輸入框樣式 */
+        /* --- 版面配置 (Layout) --- */
+        .app-container {
+            display: flex;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* --- 側邊欄 (Sidebar) --- */
+        .sidebar {
+            width: 250px;
+            background-color: #1e1e1e;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .app-title {
+            color: #bb86fc;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 分類按鈕 */
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 15px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-btn:hover {
+            background-color: #2d2d2d;
+            color: #fff;
+        }
+
+        .nav-btn.active {
+            background-color: #3700b3; /* 激活狀態的深紫色 */
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* --- 主內容區 (Main Content) --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .toolbar {
+            padding: 15px 20px;
+            background-color: #121212;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #currentTitle {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        /* 編輯器樣式 */
         textarea { 
+            flex: 1;
             width: 100%; 
-            height: 60vh; /* 佔據螢幕高度的 60% */
-            padding: 15px; 
+            padding: 25px; 
             font-size: 16px; 
-            line-height: 1.6;
-            border: 1px solid #333; 
-            border-radius: 8px; 
-            resize: vertical; 
-            background-color: #1e1e1e; 
+            line-height: 1.8;
+            border: none; 
+            background-color: #121212; 
             color: #ffffff; 
             outline: none;
-            box-sizing: border-box; 
+            resize: none; /* 禁止手動拉大，自動填滿 */
         }
 
-        textarea:focus {
-            border-color: #bb86fc; 
-        }
-
-        /* 按鈕區域 */
-        .btn-group {
-            margin-top: 15px;
-            display: flex;
-            gap: 10px; /* 按鈕之間的間距 */
-        }
-
-        button { 
-            padding: 12px 24px; 
-            font-size: 16px; 
+        /* --- 按鈕樣式 --- */
+        .action-btn { 
+            padding: 8px 16px; 
+            font-size: 14px; 
             border: none; 
-            border-radius: 5px; 
+            border-radius: 4px; 
             cursor: pointer; 
             font-weight: bold;
-            transition: opacity 0.2s;
-        }
-        
-        button:hover { opacity: 0.8; }
-
-        /* 儲存按鈕 (青色) */
-        #saveBtn {
-            background-color: #03dac6; 
-            color: #000000; 
+            margin-left: 10px;
         }
 
-        /* 備份按鈕 (紫色) */
-        #backupBtn {
-            background-color: #bb86fc;
-            color: #000000;
-        }
-        
-        /* 狀態文字 */
+        .btn-save { background-color: #03dac6; color: #000; }
+        .btn-backup { background-color: #333; color: #fff; border: 1px solid #555; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-backup:hover { background-color: #444; }
+
         #statusMsg { 
-            margin-left: 15px; 
+            font-size: 12px; 
             color: #888; 
-            font-size: 14px; 
-            align-self: center;
+            margin-right: auto; 
+            margin-left: 15px;
+        }
+
+        /* --- 手機版響應式設計 (RWD) --- */
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; }
+            .sidebar { 
+                width: 100%; 
+                height: auto; 
+                flex-direction: row; 
+                padding: 10px; 
+                overflow-x: auto; /* 允許橫向捲動 */
+                border-right: none;
+                border-bottom: 1px solid #333;
+            }
+            .app-title { display: none; /* 手機版隱藏大標題省空間 */ }
+            .nav-btn { 
+                padding: 8px 15px; 
+                margin-bottom: 0; 
+                margin-right: 5px; 
+                white-space: nowrap; 
+                font-size: 14px;
+            }
+            textarea { padding: 15px; font-size: 15px; }
         }
     </style>
 </head>
 <body>
-    <h1>我的同步筆記本</h1>
-    
-    <!-- 筆記輸入區 -->
-    <textarea id="noteArea" placeholder="正在連線到大腦資料庫..."></textarea>
-    
-    <!-- 按鈕區 -->
-    <div class="btn-group">
-        <button id="saveBtn">☁️ 儲存到雲端</button>
-        <button id="backupBtn">💾 下載備份到電腦</button>
-        <span id="statusMsg">準備就緒</span>
+
+    <div class="app-container">
+        <!-- 左側選單 -->
+        <div class="sidebar">
+            <div class="app-title">📒 雲端筆記</div>
+            <button class="nav-btn active" onclick="switchTab('today_task', '⚡ 今日任務')">⚡ 今日任務</button>
+            <button class="nav-btn" onclick="switchTab('todo_list', '✅ 待辦事項')">✅ 待辦事項</button>
+            <button class="nav-btn" onclick="switchTab('ideas', '💡 靈感隨記')">💡 靈感隨記</button>
+            <button class="nav-btn" onclick="switchTab('meeting', '📝 會議記錄')">📝 會議記錄</button>
+        </div>
+
+        <!-- 右側主內容 -->
+        <div class="main-content">
+            <div class="toolbar">
+                <span id="currentTitle">⚡ 今日任務</span>
+                <span id="statusMsg">準備就緒</span>
+                <div>
+                    <button class="action-btn btn-backup" id="backupBtn">備份當前</button>
+                    <button class="action-btn btn-save" id="saveBtn">儲存</button>
+                </div>
+            </div>
+            <textarea id="noteArea" placeholder="開始輸入內容..."></textarea>
+        </div>
     </div>
 
-    <!-- JavaScript 邏輯區 -->
     <script type="module">
-        // 引入 Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // -------------------------------------------------------
-        // 你的專屬金鑰 (已填入)
-        // -------------------------------------------------------
+        // 你的設定檔
         const firebaseConfig = {
             apiKey: "AIzaSyCeBsVFXuZ7eVP_Sq3d34Fko_Dmb0LJ7rg",
             authDomain: "my-cloud-save-place.firebaseapp.com",
@@ -111,73 +198,98 @@
             messagingSenderId: "91753582046",
             appId: "1:91753582046:web:3a46d3ce864c8f05d6214f"
         };
-        // -------------------------------------------------------
 
-        // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
-        // 設定筆記存取位置
-        const noteDocRef = doc(db, "notes", "my_note"); // Collection: notes, Doc: my_note
+
+        // --- 變數與 DOM ---
+        let currentDocId = "today_task"; // 預設開啟的分類
+        let unsubscribe = null; // 用來切換監聽器
         
         const noteArea = document.getElementById('noteArea');
-        const saveBtn = document.getElementById('saveBtn');
-        const backupBtn = document.getElementById('backupBtn');
         const statusMsg = document.getElementById('statusMsg');
+        const currentTitleSpan = document.getElementById('currentTitle');
 
-        // 1. [讀取同步] 監聽雲端變化
-        onSnapshot(noteDocRef, (doc) => {
-            if (doc.exists()) {
-                // 如果使用者正在打字 (焦點在輸入框)，不要強制覆蓋，避免打斷思路
-                // 只有當焦點不在輸入框時，才自動更新
-                if (document.activeElement !== noteArea) {
-                    noteArea.value = doc.data().content || "";
-                    statusMsg.textContent = "已同步最新雲端內容";
-                    setTimeout(() => statusMsg.textContent = "就緒", 3000);
+        // --- 核心功能：切換分頁 ---
+        // 為了讓 HTML onclick 能呼叫，我們把這個函式掛在 window 上
+        window.switchTab = function(docId, title) {
+            // 1. 更新變數
+            currentDocId = docId;
+            currentTitleSpan.textContent = title;
+
+            // 2. 更新按鈕外觀 (UI)
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            // 找到點擊的那個按鈕 (透過 event.target 有點複雜，這裡用簡單的 textContent 比對或直接由點擊觸發)
+            // 這裡我們用一個簡單的小技巧：重新渲染 active class
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(btn => {
+                if(btn.textContent.includes(title.split(' ')[1])) { // 比對文字部分
+                    btn.classList.add('active');
                 }
-            } else {
-                statusMsg.textContent = "雲端尚無資料，請開始寫作";
-            }
-        }, (error) => {
-            console.error("同步錯誤:", error);
-            statusMsg.textContent = "連線中斷，請檢查網路";
-        });
+            });
 
-        // 2. [寫入雲端] 點擊儲存
-        saveBtn.addEventListener('click', async () => {
+            // 3. 重新連結資料庫
+            startListening();
+        }
+
+        // --- 連線資料庫 ---
+        function startListening() {
+            // 如果原本有連線，先斷開（避免同時監聽兩個檔案導致錯亂）
+            if (unsubscribe) {
+                unsubscribe();
+            }
+
+            statusMsg.textContent = "載入中...";
+            noteArea.value = ""; // 清空畫面等待載入
+
+            // 連線到對應的分類文件： notes -> currentDocId
+            const docRef = doc(db, "notes", currentDocId);
+
+            unsubscribe = onSnapshot(docRef, (doc) => {
+                if (doc.exists()) {
+                    if (document.activeElement !== noteArea) {
+                        noteArea.value = doc.data().content || "";
+                        statusMsg.textContent = "已同步";
+                    }
+                } else {
+                    // 如果這個分類還沒有資料
+                    noteArea.value = ""; 
+                    statusMsg.textContent = "新頁面";
+                }
+            }, (error) => {
+                console.error(error);
+                statusMsg.textContent = "連線錯誤";
+            });
+        }
+
+        // --- 儲存功能 ---
+        document.getElementById('saveBtn').addEventListener('click', async () => {
+            const docRef = doc(db, "notes", currentDocId);
             try {
-                statusMsg.textContent = "正在上傳...";
-                await setDoc(noteDocRef, {
+                statusMsg.textContent = "儲存中...";
+                await setDoc(docRef, {
                     content: noteArea.value,
-                    updatedAt: new Date() // 紀錄更新時間
-                });
-                statusMsg.textContent = "✅ 雲端儲存成功！";
-                statusMsg.style.color = "#03dac6";
-                setTimeout(() => {
-                    statusMsg.textContent = "就緒";
-                    statusMsg.style.color = "#888";
-                }, 3000);
+                    updatedAt: new Date()
+                }, { merge: true }); // merge: true 代表保留其他欄位，只更新內容
+                
+                statusMsg.textContent = "✅ 儲存成功";
+                setTimeout(() => statusMsg.textContent = "已同步", 2000);
             } catch (e) {
-                console.error("Error:", e);
-                statusMsg.textContent = "❌ 儲存失敗";
-                statusMsg.style.color = "#cf6679";
+                console.error(e);
+                statusMsg.textContent = "❌ 失敗";
             }
         });
 
-        // 3. [本地備份] 下載為 .txt
-        backupBtn.addEventListener('click', () => {
-            const textToSave = noteArea.value;
-            if (!textToSave) {
-                statusMsg.textContent = "沒有內容可備份";
-                return;
-            }
-
-            // 產生檔名：Note_Backup_2023-11-21.txt
-            const date = new Date();
-            const dateStr = date.toISOString().split('T')[0]; 
-            const fileName = `Note_Backup_${dateStr}.txt`;
-
-            const blob = new Blob([textToSave], { type: "text/plain" });
+        // --- 備份功能 (下載當前分類) ---
+        document.getElementById('backupBtn').addEventListener('click', () => {
+            const text = noteArea.value;
+            if(!text) return;
+            
+            const dateStr = new Date().toISOString().split('T')[0];
+            // 檔名會變成：backup_today_task_2023-11-21.txt
+            const fileName = `backup_${currentDocId}_${dateStr}.txt`;
+            
+            const blob = new Blob([text], { type: "text/plain" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
@@ -185,10 +297,11 @@
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            statusMsg.textContent = "✅ 已下載備份檔案";
         });
+
+        // 程式一啟動，先載入預設頁面
+        startListening();
+
     </script>
 </body>
 </html>
