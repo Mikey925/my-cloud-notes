@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的雲端筆記 (MyNotes)</title>
+    <style>
+        /* --- 暗夜模式樣式 (Dark Mode) --- */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background-color: #121212; 
+            color: #e0e0e0; 
+        }
+        
+        h1 {
+            color: #bb86fc; 
+            font-weight: normal;
+            font-size: 1.8rem;
+        }
+
+        /* 輸入框樣式 */
+        textarea { 
+            width: 100%; 
+            height: 60vh; /* 佔據螢幕高度的 60% */
+            padding: 15px; 
+            font-size: 16px; 
+            line-height: 1.6;
+            border: 1px solid #333; 
+            border-radius: 8px; 
+            resize: vertical; 
+            background-color: #1e1e1e; 
+            color: #ffffff; 
+            outline: none;
+            box-sizing: border-box; 
+        }
+
+        textarea:focus {
+            border-color: #bb86fc; 
+        }
+
+        /* 按鈕區域 */
+        .btn-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px; /* 按鈕之間的間距 */
+        }
+
+        button { 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        
+        button:hover { opacity: 0.8; }
+
+        /* 儲存按鈕 (青色) */
+        #saveBtn {
+            background-color: #03dac6; 
+            color: #000000; 
+        }
+
+        /* 備份按鈕 (紫色) */
+        #backupBtn {
+            background-color: #bb86fc;
+            color: #000000;
+        }
+        
+        /* 狀態文字 */
+        #statusMsg { 
+            margin-left: 15px; 
+            color: #888; 
+            font-size: 14px; 
+            align-self: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>我的同步筆記本</h1>
+    
+    <!-- 筆記輸入區 -->
+    <textarea id="noteArea" placeholder="正在連線到大腦資料庫..."></textarea>
+    
+    <!-- 按鈕區 -->
+    <div class="btn-group">
+        <button id="saveBtn">☁️ 儲存到雲端</button>
+        <button id="backupBtn">💾 下載備份到電腦</button>
+        <span id="statusMsg">準備就緒</span>
+    </div>
+
+    <!-- JavaScript 邏輯區 -->
+    <script type="module">
+        // 引入 Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // -------------------------------------------------------
+        // 你的專屬金鑰 (已填入)
+        // -------------------------------------------------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeBsVFXuZ7eVP_Sq3d34Fko_Dmb0LJ7rg",
+            authDomain: "my-cloud-save-place.firebaseapp.com",
+            projectId: "my-cloud-save-place",
+            storageBucket: "my-cloud-save-place.firebasestorage.app",
+            messagingSenderId: "91753582046",
+            appId: "1:91753582046:web:3a46d3ce864c8f05d6214f"
+        };
+        // -------------------------------------------------------
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // 設定筆記存取位置
+        const noteDocRef = doc(db, "notes", "my_note"); // Collection: notes, Doc: my_note
+        
+        const noteArea = document.getElementById('noteArea');
+        const saveBtn = document.getElementById('saveBtn');
+        const backupBtn = document.getElementById('backupBtn');
+        const statusMsg = document.getElementById('statusMsg');
+
+        // 1. [讀取同步] 監聽雲端變化
+        onSnapshot(noteDocRef, (doc) => {
+            if (doc.exists()) {
+                // 如果使用者正在打字 (焦點在輸入框)，不要強制覆蓋，避免打斷思路
+                // 只有當焦點不在輸入框時，才自動更新
+                if (document.activeElement !== noteArea) {
+                    noteArea.value = doc.data().content || "";
+                    statusMsg.textContent = "已同步最新雲端內容";
+                    setTimeout(() => statusMsg.textContent = "就緒", 3000);
+                }
+            } else {
+                statusMsg.textContent = "雲端尚無資料，請開始寫作";
+            }
+        }, (error) => {
+            console.error("同步錯誤:", error);
+            statusMsg.textContent = "連線中斷，請檢查網路";
+        });
+
+        // 2. [寫入雲端] 點擊儲存
+        saveBtn.addEventListener('click', async () => {
+            try {
+                statusMsg.textContent = "正在上傳...";
+                await setDoc(noteDocRef, {
+                    content: noteArea.value,
+                    updatedAt: new Date() // 紀錄更新時間
+                });
+                statusMsg.textContent = "✅ 雲端儲存成功！";
+                statusMsg.style.color = "#03dac6";
+                setTimeout(() => {
+                    statusMsg.textContent = "就緒";
+                    statusMsg.style.color = "#888";
+                }, 3000);
+            } catch (e) {
+                console.error("Error:", e);
+                statusMsg.textContent = "❌ 儲存失敗";
+                statusMsg.style.color = "#cf6679";
+            }
+        });
+
+        // 3. [本地備份] 下載為 .txt
+        backupBtn.addEventListener('click', () => {
+            const textToSave = noteArea.value;
+            if (!textToSave) {
+                statusMsg.textContent = "沒有內容可備份";
+                return;
+            }
+
+            // 產生檔名：Note_Backup_2023-11-21.txt
+            const date = new Date();
+            const dateStr = date.toISOString().split('T')[0]; 
+            const fileName = `Note_Backup_${dateStr}.txt`;
+
+            const blob = new Blob([textToSave], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            statusMsg.textContent = "✅ 已下載備份檔案";
+        });
+    </script>
+</body>
+</html>
